@@ -1,0 +1,14 @@
+FROM amazonlinux:2
+COPY amzn2-extras.repo /etc/yum.repos.d/amzn2-extras.repo
+RUN yum install -y rpm-build git m4 python3-devel dwarves \
+    glibc-static xmlto asciidoc openssl-devel elfutils-devel \
+    binutils-devel newt-devel bison audit-libs-devel java-devel \
+    libzstd-devel numactl-devel pciutils-devel libcap-devel \
+    pesign hmaccalc  make hostname openssl rsync gcc10 gcc10-binutils \
+    bc net-tools python-devel gettext python-docutils yum-utils gcc
+
+WORKDIR /root
+RUN git clone https://github.com/vewe-richard/linux-btrfs-softlockup.git
+WORKDIR /root/linux-btrfs-softlockup
+RUN git remote add amazonlinux https://github.com/amazonlinux/linux.git
+RUN git fetch amazonlinux --tags

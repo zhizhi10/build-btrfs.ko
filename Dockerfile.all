@@ -1,0 +1,26 @@
+FROM amazonlinux:2
+ARG version
+RUN yum install -y yum-utils
+COPY amzn2-extras.repo /etc/yum.repos.d/amzn2-extras.repo
+RUN yumdownloader --source kernel-$version.x86_64
+RUN yum install -y rpm-build git m4 python3-devel dwarves \
+    glibc-static xmlto asciidoc openssl-devel elfutils-devel \
+    binutils-devel newt-devel bison audit-libs-devel java-devel \
+    libzstd-devel numactl-devel pciutils-devel libcap-devel \
+    pesign hmaccalc  make hostname openssl rsync gcc10 gcc10-binutils \
+    bc net-tools python-devel gettext python-docutils
+
+RUN rpm -i kernel-$version.src.rpm
+WORKDIR /root/rpmbuild/SPECS
+RUN rpmbuild -bc --target=`uname -m` kernel.spec
+RUN ls ../BUILDROOT/kernel-$version.x86_64/usr/src/kernels/$version.x86_64/
+WORKDIR /root
+RUN git clone https://github.com/vewe-richard/linux-btrfs-softlockup.git
+WORKDIR /root/linux-btrfs-softlockup
+RUN git remote add amazonlinux https://github.com/amazonlinux/linux.git
+RUN git fetch amazonlinux --tags
+RUN git checkout kernel-$version
+RUN git cherry-pick d149d8fdce9172cdfbb68ff564235513d
+WORKDIR /root/linux-btrfs-softlockup/fs/btrfs
+RUN make -C /root/rpmbuild/BUILDROOT/kernel-$version.x86_64/usr/src/kernels/$version.x86_64/   M=/root/linux-btrfs-softlockup/fs/btrfs  modules
+RUN ls /root/linux-btrfs-softlockup/fs/btrfs/btrfs.ko  
